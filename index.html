@@ -17,7 +17,8 @@
         .match-card { border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #fff; position: relative; }
         .best-value { border: 2px solid var(--success); background: #f0fff4; }
         .badge { position: absolute; top: -10px; right: 10px; background: var(--success); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
-        .price { font-size: 1.3rem; font-weight: bold; color: var(--success); float: right; }
+        .price { font-size: 1.3rem; font-weight: bold; color: var(--success); float: right; text-align: right;}
+        .price small { display: block; font-size: 0.65rem; color: #666; font-weight: normal; }
         .date-header { font-size: 0.8rem; font-weight: bold; color: #888; margin-bottom: 8px; }
         .meta { font-size: 0.9rem; line-height: 1.4; margin: 10px 0; }
         #loader { display: none; text-align: center; color: #666; font-style: italic; margin: 20px; }
@@ -27,7 +28,7 @@
 
 <div class="card">
     <span class="mdi mdi-ceiling-light-multiple light-icon"></span>
-    <h1>Travel Optimizer</h1>
+    <h1>Smart Travel Matcher</h1>
     
     <label>Target Date</label>
     <input type="date" id="targetDate">
@@ -41,10 +42,10 @@
         <option value="UIUC_LAX">UIUC (Bus) ➔ MDW ✈ LAX</option>
     </select>
 
-    <button onclick="runSmartSearch()">Analyze 3-Day Window</button>
+    <button onclick="runSmartSearch()">Find Best Connections</button>
 </div>
 
-<div id="loader">Processing schedules & cost functions...</div>
+<div id="loader">Filtering for optimal arrival times...</div>
 <div id="results"></div>
 
 <script>
@@ -62,70 +63,78 @@ async function runSmartSearch() {
 
     const targetDate = new Date(targetDateStr + "T00:00:00");
     const dates = [
-        new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0], // Yesterday
-        targetDateStr,                                                        // Today
-        new Date(targetDate.getTime() + 86400000).toISOString().split('T')[0]  // Tomorrow
+        new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0],
+        targetDateStr,
+        new Date(targetDate.getTime() + 86400000).toISOString().split('T')[0]
     ];
 
     let allOptions = [];
+    const shuttlePrice = 46.00;
 
-    // Mocking the Data Fetching for the 3-day window
     for (let dateStr of dates) {
         const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
         
-        // SDE Note: Southwest flights often vary by $30-$100 day-to-day
+        // Flight data simulation
         const dailyFlights = [
-            { id: "WN454", dep: "06:30", arr: "12:15", price: 140 + (Math.random() * 80) },
-            { id: "WN221", dep: "10:45", arr: "16:30", price: 110 + (Math.random() * 80) },
-            { id: "WN889", dep: "15:00", arr: "20:45", price: 170 + (Math.random() * 80) }
+            { id: "WN454", dep: "06:30", arr: "12:15", price: 140 + (Math.random() * 50) },
+            { id: "WN221", dep: "10:45", arr: "16:30", price: 110 + (Math.random() * 50) },
+            { id: "WN889", dep: "15:00", arr: "20:45", price: 170 + (Math.random() * 50) },
+            { id: "WN991", dep: "18:30", arr: "00:15", price: 90 + (Math.random() * 50) }
         ];
 
-        // Scraped from Peoria Charter for MDW Airport
+        // Shuttle data simulation
         const dailyBuses = [
-            { id: "PC-Early", dep: "08:30", arr: "11:15" },
-            { id: "PC-Mid", dep: "13:30", arr: "16:15" },
-            { id: "PC-Late", dep: "18:30", arr: "21:15" },
+            { id: "PC-Early", dep: "08:05", arr: "10:50" },
+            { id: "PC-Noon", dep: "13:55", arr: "16:40" },
+            { id: "PC-Late", dep: "18:15", arr: "21:00" },
             { id: "PC-Night", dep: "22:15", arr: "01:00" }
         ];
 
         dailyFlights.forEach(f => {
             dailyBuses.forEach(b => {
-                let wait, isValid = false;
+                let wait, finalArr, isValid = false;
 
                 if (direction === "LAX_UIUC") {
                     wait = timeDiff(f.arr, b.dep);
-                    if (wait >= 45) isValid = true;
+                    finalArr = b.arr;
+                    if (wait >= 45 && wait <= 240) isValid = true;
                 } else {
                     const boarding = timeSub(f.dep, 30);
                     wait = timeDiff(b.arr, boarding);
-                    if (wait >= 60) isValid = true;
+                    finalArr = f.arr;
+                    if (wait >= 60 && wait <= 240) isValid = true;
                 }
 
+                // NEW FILTER: Only arrive between 09:00 and 22:00
+                const [arrH, arrM] = finalArr.split(':').map(Number);
+                const totalArrMins = arrH * 60 + arrM;
+                if (totalArrMins < 540 || totalArrMins > 1320) isValid = false;
+
                 if (isValid) {
-                    // COST FUNCTION: Lower is better
-                    // We value time at $0.20/min and a day switch at $50
-                    const proxPenalty = Math.abs(timeDiff(prefTime, (direction === "LAX_UIUC" ? f.dep : b.dep))) * 0.1;
+                    const firstDep = direction === "LAX_UIUC" ? f.dep : b.dep;
+                    const proxPenalty = Math.abs(timeDiff(prefTime, firstDep)) * 0.1;
                     const score = f.price + (wait * 0.2) + (dayOffset * 50) + proxPenalty;
                     
-                    allOptions.push({ f, b, wait, dateStr, score, dayOffset, direction });
+                    allOptions.push({ f, b, wait, dateStr, score, dayOffset, totalPrice: f.price + shuttlePrice, finalArr });
                 }
             });
         });
     }
 
-    // Sort by Cost Function Score
     allOptions.sort((a, b) => a.score - b.score);
-
     loader.style.display = "none";
-    if (allOptions.length === 0) resultsDiv.innerHTML = "<p>No connections found. Try a different time.</p>";
-    else render(allOptions.slice(0, 8), resultsDiv);
+    
+    if (allOptions.length === 0) {
+        resultsDiv.innerHTML = "<p style='text-align:center;'>No results match your 9am-10pm arrival window.</p>";
+    } else {
+        render(allOptions.slice(0, 5), resultsDiv);
+    }
 }
 
 function timeDiff(t1, t2) {
     const [h1, m1] = t1.split(':').map(Number);
     const [h2, m2] = t2.split(':').map(Number);
-    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-    return diff;
+    return (h2 * 60 + m2) - (h1 * 60 + m1);
 }
 
 function timeSub(time, mins) {
@@ -138,21 +147,19 @@ function timeSub(time, mins) {
 function render(options, container) {
     options.forEach((opt, i) => {
         const isBest = i === 0;
-        const html = `
+        container.innerHTML += `
             <div class="match-card ${isBest ? 'best-value' : ''}">
-                ${isBest ? '<div class="badge">BEST VALUE</div>' : ''}
+                ${isBest ? '<div class="badge">TOP PICK</div>' : ''}
                 <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(Alt Day)' : ''}</div>
-                <span class="price">$${opt.f.price.toFixed(0)}</span>
+                <div class="price">$${opt.totalPrice.toFixed(0)} <small>Total Trip</small></div>
                 <strong>${opt.f.id} + ${opt.b.id}</strong>
                 <div class="meta">
                     <b>Leg 1:</b> ${opt.f.dep} - ${opt.f.arr}<br>
                     <b>Leg 2:</b> ${opt.b.dep} - ${opt.b.arr}<br>
+                    <b>Final Arrival:</b> ${opt.finalArr}<br>
                     <b>MDW Buffer:</b> ${opt.wait} mins
                 </div>
-                <button style="padding:8px; font-size:0.8rem; background:${isBest ? 'var(--success)' : 'var(--sw-blue)'}" 
-                        onclick="window.open('https://www.southwest.com')">Select This Option</button>
             </div>`;
-        container.innerHTML += html;
     });
 }
 </script>
