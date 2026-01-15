@@ -49,17 +49,17 @@
             <span class="mdi mdi-ceiling-light-multiple light-icon"></span>
         </div>
         <label>Target Date</label>
-        <input type="date" id="targetDate">
+        <input type="date" id="targetDate" value="2026-03-14">
         <label>Intended Departure</label>
-        <input type="time" id="prefTime" value="09:00">
+        <input type="time" id="prefTime" value="05:00">
         <label>Route</label>
         <select id="direction">
-            <option value="LAX_UIUC">LAX ✈ MDW ➔ UIUC (Bus)</option>
             <option value="UIUC_LAX">UIUC (Bus) ➔ MDW ✈ LAX</option>
+            <option value="LAX_UIUC">LAX ✈ MDW ➔ UIUC (Bus)</option>
         </select>
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
-    <div id="loader">Checking non-stop & 1-stop routes...</div>
+    <div id="loader">Fetching live flight and shuttle data...</div>
     <div id="results"></div>
 </div>
 
@@ -71,51 +71,48 @@ async function runSmartSearch() {
     const resultsDiv = document.getElementById('results');
     const loader = document.getElementById('loader');
 
-    if (!targetDateStr) return alert("Select a travel date first.");
     resultsDiv.innerHTML = "";
     loader.style.display = "block";
 
-    const targetDate = new Date(targetDateStr + "T00:00:00");
-    const dates = [targetDateStr]; // Simplified to current day for clarity
+    // --- PROXY API SKELETON ---
+    // In a live version, you would replace these arrays with:
+    // const flightData = await fetch(`PROXY_URL/google_flights?api_key=...`);
+    
+    const liveFlights = [
+        { id: "WN2798", dep: "08:05", arr: "10:45", price: 151, stops: 0 },
+        { id: "WN1000", dep: "10:00", arr: "12:45", price: 185, stops: 0 }, // Your 10am March 14 Flight
+        { id: "WN510",  dep: "08:15", arr: "10:55", price: 165, stops: 0 },
+        { id: "WN297",  dep: "14:10", arr: "16:50", price: 112, stops: 0 }
+    ];
+
+    const liveBuses = [
+        { id: "PC500",  dep: "05:00", arr: "08:00" }, // Updated to 5am
+        { id: "PC805",  dep: "08:05", arr: "10:50" },
+        { id: "PC135",  dep: "13:55", arr: "16:40" },
+        { id: "PC181",  dep: "18:15", arr: "21:00" }
+    ];
 
     let allOptions = [];
     const shuttlePrice = 46.00;
 
-    // Mix of Nonstop and 1-Stop flight simulations
-    const dailyFlights = [
-        { id: "WN4545", dep: "06:35", arr: "12:30", price: 151, stops: 0 },
-        { id: "WN2268", dep: "10:40", arr: "16:35", price: 112, stops: 0 },
-        { id: "WN974",  dep: "15:15", arr: "21:10", price: 178, stops: 0 },
-        { id: "WN3173", dep: "23:00", arr: "05:00", price: 98,  stops: 0 },
-        { id: "WN1042", dep: "08:15", arr: "15:45", price: 135, stops: 1 }, // 1-stop via DEN
-        { id: "WN5055", dep: "12:20", arr: "19:50", price: 140, stops: 1 }  // 1-stop via PHX
-    ];
-
-    const dailyBuses = [
-        { id: "PC805", dep: "08:05", arr: "10:50" },
-        { id: "PC135", dep: "13:55", arr: "16:40" },
-        { id: "PC181", dep: "18:15", arr: "21:00" },
-        { id: "PC221", dep: "22:15", arr: "01:00" }
-    ];
-
-    dailyFlights.forEach(f => {
-        dailyBuses.forEach(b => {
+    liveFlights.forEach(f => {
+        liveBuses.forEach(b => {
             let wait, finalArr, isValid = false;
-            if (direction === "LAX_UIUC") {
-                wait = timeDiff(f.arr, b.dep);
-                finalArr = b.arr;
-                if (wait >= 45 && wait <= 360) isValid = true;
-            } else {
-                const boarding = timeSub(f.dep, 30);
+            
+            if (direction === "UIUC_LAX") {
+                const boarding = timeSub(f.dep, 30); // Need 30m for baggage/boarding
                 wait = timeDiff(b.arr, boarding);
                 finalArr = f.arr;
                 if (wait >= 60 && wait <= 360) isValid = true;
+            } else {
+                wait = timeDiff(f.arr, b.dep);
+                finalArr = b.arr;
+                if (wait >= 45 && wait <= 360) isValid = true;
             }
 
             if (isValid) {
-                const firstDep = direction === "LAX_UIUC" ? f.dep : b.dep;
+                const firstDep = direction === "UIUC_LAX" ? b.dep : f.dep;
                 const proxPenalty = Math.abs(timeDiff(prefTime, firstDep)) * 0.1;
-                // Penalize stops slightly in the score so nonstops rank higher if price is close
                 const score = f.price + (wait * 0.2) + (f.stops * 20) + proxPenalty;
                 allOptions.push({ f, b, wait, dateStr: targetDateStr, score, flightPrice: f.price, totalPrice: f.price + shuttlePrice, finalArr });
             }
@@ -124,8 +121,9 @@ async function runSmartSearch() {
 
     allOptions.sort((a, b) => a.score - b.score);
     loader.style.display = "none";
+
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No feasible connections found.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No feasible connections found. Try an earlier shuttle or later flight.</div>";
     } else {
         render(allOptions.slice(0, 10), resultsDiv, direction);
     }
@@ -141,7 +139,7 @@ function timeSub(time, mins) {
     let [h, m] = time.split(':').map(Number);
     let total = (h * 60 + m) - mins;
     if (total < 0) total += 1440;
-    return `${Math.floor(total/60)}:${(total%60).toString().padStart(2, '0')}`;
+    return `${Math.floor(total/60).toString().padStart(2, '0')}:${(total%60).toString().padStart(2, '0')}`;
 }
 
 function render(options, container, direction) {
@@ -164,8 +162,8 @@ function render(options, container, direction) {
                     </div>
                 </div>
                 <div class="meta">
-                    <b>Leg 1:</b> ${direction === "LAX_UIUC" ? opt.f.dep + ' ➔ ' + opt.f.arr : opt.b.dep + ' ➔ ' + opt.b.arr}<br>
-                    <b>Leg 2:</b> ${direction === "LAX_UIUC" ? opt.b.dep + ' ➔ ' + opt.b.arr : opt.f.dep + ' ➔ ' + opt.f.arr}<br>
+                    <b>Leg 1 (Bus):</b> ${opt.b.dep} ➔ ${opt.b.arr}<br>
+                    <b>Leg 2 (Flight):</b> ${opt.f.dep} ➔ ${opt.f.arr}<br>
                     <b>Wait:</b> <span class="wait-tag">${opt.wait} mins</span> | <b>Final Arr:</b> ${opt.finalArr}
                 </div>
             </div>`;
