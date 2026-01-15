@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
     
     <style>
-        /* SDE Reset: Box-sizing is applied globally to prevent spilling */
         * { box-sizing: border-box; }
 
         :root { 
@@ -24,20 +23,16 @@
         }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background: var(--bg); 
             margin: 0; 
-            padding: 20px 16px; /* Increased padding creates a gutter for the card */
+            padding: 20px 16px; 
             color: #333;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
 
-        .container { 
-            max-width: 440px; 
-            margin: 0 auto; 
-            width: 100%; 
-        }
+        .container { max-width: 440px; margin: 0 auto; width: 100%; }
 
         .card { 
             background: white; 
@@ -48,19 +43,12 @@
             width: 100%;
         }
 
-        .header-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
-        }
-        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { font-size: 1.2rem; color: var(--sw-blue); margin: 0; font-weight: 800; }
         .light-icon { color: var(--sw-yellow); font-size: 26px; }
 
         label { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; display: block; margin-bottom: 6px; }
 
-        /* The Chrome/iOS Edge-Spill Fix */
         input, select, button { 
             width: 100%; 
             max-width: 100%; 
@@ -69,12 +57,11 @@
             margin-bottom: 16px; 
             border: 1px solid #e0e0e0; 
             border-radius: 10px; 
-            font-size: 16px; /* Essential to prevent iOS auto-zoom */
+            font-size: 16px; 
             background-color: #ffffff;
-            -webkit-appearance: none; /* Strips default iOS bloated styles */
+            -webkit-appearance: none;
         }
 
-        /* Custom arrow for select since -webkit-appearance:none removes it */
         select {
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
@@ -83,16 +70,7 @@
             padding-right: 2.5rem;
         }
 
-        button { 
-            background: var(--sw-blue); 
-            color: white; 
-            border: none; 
-            font-weight: 700; 
-            cursor: pointer; 
-            margin-bottom: 0;
-            margin-top: 5px;
-        }
-        
+        button { background: var(--sw-blue); color: white; border: none; font-weight: 700; cursor: pointer; margin-top: 5px;}
         button:active { transform: scale(0.98); opacity: 0.9; }
 
         .match-card { 
@@ -109,13 +87,24 @@
         
         .result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .badge { background: var(--success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: bold; margin-bottom: 6px; display: inline-block; }
-        .price-box { text-align: right; min-width: 85px; }
-        .price { color: var(--success); font-weight: 800; font-size: 1.3rem; }
-        .price small { display: block; font-size: 0.6rem; color: #666; font-weight: normal; margin-top: 2px; }
-        .date-header { font-size: 0.75rem; font-weight: 600; color: #999; margin-bottom: 2px; }
-        .meta { font-size: 0.85rem; line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
         
-        #loader { display: none; text-align: center; color: #666; padding: 20px; font-size: 0.9rem; font-style: italic; }
+        .price-box { text-align: right; min-width: 95px; }
+        .price { color: var(--success); font-weight: 800; font-size: 1.3rem; }
+        .price-breakdown { font-size: 0.65rem; color: #777; margin-top: 4px; line-height: 1.2; }
+
+        .date-header { font-size: 0.75rem; font-weight: 600; color: #999; margin-bottom: 2px; }
+        
+        .meta { 
+            font-size: 0.85rem; 
+            line-height: 1.6; 
+            margin-top: 12px; 
+            padding-top: 12px; 
+            border-top: 1px solid #f0f0f0; 
+        }
+        .meta b { color: var(--sw-blue); }
+        .wait-tag { color: #d32f2f; font-weight: bold; }
+
+        #loader { display: none; text-align: center; color: #666; padding: 20px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -142,7 +131,7 @@
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
 
-    <div id="loader">Optimizing for 9am-10pm window...</div>
+    <div id="loader">Calculating costs & timing...</div>
     <div id="results"></div>
 </div>
 
@@ -159,7 +148,6 @@ async function runSmartSearch() {
     resultsDiv.innerHTML = "";
     loader.style.display = "block";
 
-    // Date math for 3-day window
     const targetDate = new Date(targetDateStr + "T00:00:00");
     const dates = [
         new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0],
@@ -173,7 +161,6 @@ async function runSmartSearch() {
     for (let dateStr of dates) {
         const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
         
-        // Mocked Flights (Replace with scraper results in production)
         const dailyFlights = [
             { id: "WN102", dep: "06:30", arr: "12:15", price: 145 },
             { id: "WN504", dep: "10:45", arr: "16:30", price: 115 },
@@ -203,7 +190,6 @@ async function runSmartSearch() {
                     if (wait >= 60 && wait <= 240) isValid = true;
                 }
 
-                // Filter for UIUC/LAX Arrival between 09:00 and 22:00
                 const [arrH, arrM] = finalArr.split(':').map(Number);
                 const totalArrMins = arrH * 60 + arrM;
                 if (totalArrMins < 540 || totalArrMins > 1320) isValid = false;
@@ -213,7 +199,13 @@ async function runSmartSearch() {
                     const proxPenalty = Math.abs(timeDiff(prefTime, firstDep)) * 0.1;
                     const score = f.price + (wait * 0.2) + (dayOffset * 50) + proxPenalty;
                     
-                    allOptions.push({ f, b, wait, dateStr, score, dayOffset, totalPrice: f.price + shuttlePrice, finalArr });
+                    allOptions.push({ 
+                        f, b, wait, dateStr, score, dayOffset, 
+                        flightPrice: f.price, 
+                        shuttlePrice: shuttlePrice,
+                        totalPrice: f.price + shuttlePrice, 
+                        finalArr 
+                    });
                 }
             });
         });
@@ -223,9 +215,9 @@ async function runSmartSearch() {
     loader.style.display = "none";
     
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No connections match the 9am-10pm arrival window.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No options found for the 9am-10pm window.</div>";
     } else {
-        render(allOptions.slice(0, 5), resultsDiv);
+        render(allOptions.slice(0, 5), resultsDiv, direction);
     }
 }
 
@@ -242,9 +234,12 @@ function timeSub(time, mins) {
     return `${Math.floor(total/60)}:${(total%60).toString().padStart(2, '0')}`;
 }
 
-function render(options, container) {
+function render(options, container, direction) {
     options.forEach((opt, i) => {
         const isBest = i === 0;
+        const leg1Label = direction === "LAX_UIUC" ? "Flight" : "Shuttle";
+        const leg2Label = direction === "LAX_UIUC" ? "Shuttle" : "Flight";
+        
         container.innerHTML += `
             <div class="match-card ${isBest ? 'best-value' : ''}">
                 <div class="result-header">
@@ -255,14 +250,17 @@ function render(options, container) {
                     </div>
                     <div class="price-box">
                         <div class="price">$${opt.totalPrice.toFixed(0)}</div>
-                        <small>Total Trip</small>
+                        <div class="price-breakdown">
+                            Flight: $${opt.flightPrice.toFixed(0)}<br>
+                            Shuttle: $${opt.shuttlePrice.toFixed(0)}
+                        </div>
                     </div>
                 </div>
                 <div class="meta">
-                    <b>Departure:</b> ${opt.f.dep}<br>
-                    <b>Arrive @ MDW:</b> ${opt.f.arr}<br>
-                    <b>Wait Time:</b> ${opt.wait} mins<br>
-                    <b>Final Arrival:</b> ${opt.finalArr}
+                    <b>Leg 1 (${leg1Label}):</b> ${direction === "LAX_UIUC" ? opt.f.dep + ' ➔ ' + opt.f.arr : opt.b.dep + ' ➔ ' + opt.b.arr}<br>
+                    <b>Leg 2 (${leg2Label}):</b> ${direction === "LAX_UIUC" ? opt.b.dep + ' ➔ ' + opt.b.arr : opt.f.dep + ' ➔ ' + opt.f.arr}<br>
+                    <b>MDW Wait:</b> <span class="wait-tag">${opt.wait} mins</span><br>
+                    <b>Final Arrival:</b> <strong>${opt.finalArr}</strong>
                 </div>
             </div>`;
     });
