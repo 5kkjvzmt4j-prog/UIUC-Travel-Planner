@@ -131,7 +131,7 @@
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
 
-    <div id="loader">Calculating costs & timing...</div>
+    <div id="loader">Finding all available connections...</div>
     <div id="results"></div>
 </div>
 
@@ -182,17 +182,15 @@ async function runSmartSearch() {
                 if (direction === "LAX_UIUC") {
                     wait = timeDiff(f.arr, b.dep);
                     finalArr = b.arr;
-                    if (wait >= 45 && wait <= 240) isValid = true;
+                    // Safety buffer: at least 45 mins, max 6 hours
+                    if (wait >= 45 && wait <= 360) isValid = true;
                 } else {
                     const boarding = timeSub(f.dep, 30);
                     wait = timeDiff(b.arr, boarding);
                     finalArr = f.arr;
-                    if (wait >= 60 && wait <= 240) isValid = true;
+                    // Safety buffer: at least 60 mins for security
+                    if (wait >= 60 && wait <= 360) isValid = true;
                 }
-
-                const [arrH, arrM] = finalArr.split(':').map(Number);
-                const totalArrMins = arrH * 60 + arrM;
-                if (totalArrMins < 540 || totalArrMins > 1320) isValid = false;
 
                 if (isValid) {
                     const firstDep = direction === "LAX_UIUC" ? f.dep : b.dep;
@@ -215,9 +213,9 @@ async function runSmartSearch() {
     loader.style.display = "none";
     
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No options found for the 9am-10pm window.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No feasible connections found for these dates.</div>";
     } else {
-        render(allOptions.slice(0, 5), resultsDiv, direction);
+        render(allOptions.slice(0, 10), resultsDiv, direction);
     }
 }
 
