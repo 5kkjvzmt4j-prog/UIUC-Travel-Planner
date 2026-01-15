@@ -3,118 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAX-MDW-UIUC Matcher</title>
+    <title>SWA-UIUC Pro Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
     <style>
-        :root { --sw-blue: #304cb2; --sw-yellow: #ffbf27; --pc-blue: #004a99; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .light-status { float: right; color: var(--sw-yellow); font-size: 24px; }
-        h1 { font-size: 1.4rem; color: var(--sw-blue); margin-top: 0; display: flex; align-items: center; }
-        label { display: block; font-weight: 600; margin: 10px 0 5px; font-size: 0.9rem; color: #555; }
-        select, input, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
-        button { background: var(--sw-blue); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        .match { border-left: 5px solid #4caf50; background: #f9fff9; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e0eee0; border-left-width: 6px; }
-        .wait-tag { font-weight: bold; color: #2e7d32; }
-        #loader { display: none; text-align: center; padding: 20px; color: #666; font-style: italic; }
+        :root { --sw-blue: #304cb2; --sw-yellow: #ffbf27; --pc-blue: #004a99; --success: #2e7d32; }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f6; margin: 0; padding: 15px; color: #333; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .light-icon { float: right; color: var(--sw-yellow); font-size: 28px; }
+        h1 { font-size: 1.2rem; color: var(--sw-blue); margin: 0 0 15px; }
+        label { font-size: 0.75rem; font-weight: bold; color: #666; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        button { background: var(--sw-blue); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .match-card { border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #fff; position: relative; }
+        .best-value { border: 2px solid var(--success); background: #f0fff4; }
+        .badge { position: absolute; top: -10px; right: 10px; background: var(--success); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
+        .price { font-size: 1.3rem; font-weight: bold; color: var(--success); float: right; }
+        .date-header { font-size: 0.8rem; font-weight: bold; color: #888; margin-bottom: 8px; }
+        .meta { font-size: 0.9rem; line-height: 1.4; margin: 10px 0; }
+        #loader { display: none; text-align: center; color: #666; font-style: italic; margin: 20px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <span class="light-status mdi mdi-ceiling-light-multiple"></span>
-    <h1>Travel Matcher</h1>
+    <span class="mdi mdi-ceiling-light-multiple light-icon"></span>
+    <h1>Travel Optimizer</h1>
     
-    <label>Date of Travel</label>
-    <input type="date" id="dateInput">
+    <label>Target Date</label>
+    <input type="date" id="targetDate">
 
-    <label>Direction</label>
-    <select id="route">
+    <label>Intended Departure</label>
+    <input type="time" id="prefTime" value="09:00">
+
+    <label>Route</label>
+    <select id="direction">
         <option value="LAX_UIUC">LAX ✈ MDW ➔ UIUC (Bus)</option>
         <option value="UIUC_LAX">UIUC (Bus) ➔ MDW ✈ LAX</option>
     </select>
 
-    <button onclick="findMatches()">Search Schedules</button>
+    <button onclick="runSmartSearch()">Analyze 3-Day Window</button>
 </div>
 
-<div id="loader">Fetching live data...</div>
+<div id="loader">Processing schedules & cost functions...</div>
 <div id="results"></div>
 
 <script>
-async function findMatches() {
-    const date = document.getElementById('dateInput').value;
-    const route = document.getElementById('route').value;
+async function runSmartSearch() {
+    const targetDateStr = document.getElementById('targetDate').value;
+    const prefTime = document.getElementById('prefTime').value;
+    const direction = document.getElementById('direction').value;
+    const resultsDiv = document.getElementById('results');
     const loader = document.getElementById('loader');
-    const results = document.getElementById('results');
 
-    if (!date) return alert("Select a date first.");
+    if (!targetDateStr) return alert("Please select a date.");
     
-    results.innerHTML = "";
+    resultsDiv.innerHTML = "";
     loader.style.display = "block";
 
-    // Simulating the SDE fetch logic for Southwest & Peoria Charter
-    // Note: To bypass CORS, real implementations use a proxy like allorigins.win
-    setTimeout(() => {
-        loader.style.display = "none";
+    const targetDate = new Date(targetDateStr + "T00:00:00");
+    const dates = [
+        new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0], // Yesterday
+        targetDateStr,                                                        // Today
+        new Date(targetDate.getTime() + 86400000).toISOString().split('T')[0]  // Tomorrow
+    ];
+
+    let allOptions = [];
+
+    // Mocking the Data Fetching for the 3-day window
+    for (let dateStr of dates) {
+        const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
         
-        // Example dynamic data that would be parsed from Southwest/Peoria
-        const flights = [
-            { id: "WN102", dep: "06:15", arr: "12:15" },
-            { id: "WN504", dep: "10:30", arr: "16:40" },
-            { id: "WN990", dep: "14:50", arr: "21:00" }
-        ];
-        
-        const buses = [
-            { id: "Bus-A", dep: "08:00", arr: "10:45" },
-            { id: "Bus-B", dep: "13:30", arr: "16:15" },
-            { id: "Bus-C", dep: "18:30", arr: "21:15" }
+        // SDE Note: Southwest flights often vary by $30-$100 day-to-day
+        const dailyFlights = [
+            { id: "WN454", dep: "06:30", arr: "12:15", price: 140 + (Math.random() * 80) },
+            { id: "WN221", dep: "10:45", arr: "16:30", price: 110 + (Math.random() * 80) },
+            { id: "WN889", dep: "15:00", arr: "20:45", price: 170 + (Math.random() * 80) }
         ];
 
-        let foundCount = 0;
-        flights.forEach(f => {
-            buses.forEach(b => {
-                if (route === "LAX_UIUC") {
-                    const wait = timeDiff(f.arr, b.dep);
-                    if (wait >= 45) {
-                        render(f, b, wait, "Wait at MDW", results);
-                        foundCount++;
-                    }
+        // Scraped from Peoria Charter for MDW Airport
+        const dailyBuses = [
+            { id: "PC-Early", dep: "08:30", arr: "11:15" },
+            { id: "PC-Mid", dep: "13:30", arr: "16:15" },
+            { id: "PC-Late", dep: "18:30", arr: "21:15" },
+            { id: "PC-Night", dep: "22:15", arr: "01:00" }
+        ];
+
+        dailyFlights.forEach(f => {
+            dailyBuses.forEach(b => {
+                let wait, isValid = false;
+
+                if (direction === "LAX_UIUC") {
+                    wait = timeDiff(f.arr, b.dep);
+                    if (wait >= 45) isValid = true;
                 } else {
                     const boarding = timeSub(f.dep, 30);
-                    const gap = timeDiff(b.arr, boarding);
-                    if (gap >= 60) {
-                        render(b, f, gap, "Airport Buffer", results);
-                        foundCount++;
-                    }
+                    wait = timeDiff(b.arr, boarding);
+                    if (wait >= 60) isValid = true;
+                }
+
+                if (isValid) {
+                    // COST FUNCTION: Lower is better
+                    // We value time at $0.20/min and a day switch at $50
+                    const proxPenalty = Math.abs(timeDiff(prefTime, (direction === "LAX_UIUC" ? f.dep : b.dep))) * 0.1;
+                    const score = f.price + (wait * 0.2) + (dayOffset * 50) + proxPenalty;
+                    
+                    allOptions.push({ f, b, wait, dateStr, score, dayOffset, direction });
                 }
             });
         });
+    }
 
-        if (foundCount === 0) results.innerHTML = "<p>No matches found within buffer constraints.</p>";
-    }, 800);
+    // Sort by Cost Function Score
+    allOptions.sort((a, b) => a.score - b.score);
+
+    loader.style.display = "none";
+    if (allOptions.length === 0) resultsDiv.innerHTML = "<p>No connections found. Try a different time.</p>";
+    else render(allOptions.slice(0, 8), resultsDiv);
 }
 
-function timeDiff(start, end) {
-    const s = start.split(':').map(Number);
-    const e = end.split(':').map(Number);
-    return (e[0] * 60 + e[1]) - (s[0] * 60 + s[1]);
+function timeDiff(t1, t2) {
+    const [h1, m1] = t1.split(':').map(Number);
+    const [h2, m2] = t2.split(':').map(Number);
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return diff;
 }
 
 function timeSub(time, mins) {
     let [h, m] = time.split(':').map(Number);
-    let total = h * 60 + m - mins;
+    let total = (h * 60 + m) - mins;
+    if (total < 0) total += 1440;
     return `${Math.floor(total/60)}:${(total%60).toString().padStart(2, '0')}`;
 }
 
-function render(l1, l2, gap, label, container) {
-    container.innerHTML += `
-        <div class="card match">
-            <strong>${l1.id} ➔ ${l2.id}</strong><br>
-            <small>${l1.dep}-${l1.arr} | ${l2.dep}-${l2.arr}</small><br>
-            <div class="wait-tag">${label}: ${gap} mins</div>
-            <button style="padding:8px; margin-top:10px; font-size:0.8rem;" onclick="window.open('https://www.southwest.com')">Book on Southwest</button>
-        </div>`;
+function render(options, container) {
+    options.forEach((opt, i) => {
+        const isBest = i === 0;
+        const html = `
+            <div class="match-card ${isBest ? 'best-value' : ''}">
+                ${isBest ? '<div class="badge">BEST VALUE</div>' : ''}
+                <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(Alt Day)' : ''}</div>
+                <span class="price">$${opt.f.price.toFixed(0)}</span>
+                <strong>${opt.f.id} + ${opt.b.id}</strong>
+                <div class="meta">
+                    <b>Leg 1:</b> ${opt.f.dep} - ${opt.f.arr}<br>
+                    <b>Leg 2:</b> ${opt.b.dep} - ${opt.b.arr}<br>
+                    <b>MDW Buffer:</b> ${opt.wait} mins
+                </div>
+                <button style="padding:8px; font-size:0.8rem; background:${isBest ? 'var(--success)' : 'var(--sw-blue)'}" 
+                        onclick="window.open('https://www.southwest.com')">Select This Option</button>
+            </div>`;
+        container.innerHTML += html;
+    });
 }
 </script>
 </body>
