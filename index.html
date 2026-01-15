@@ -3,35 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Travel Smarter">
+    
     <title>Encino - UIUC Pro Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+    
     <style>
-        /* The "SDE Magic" - Prevents spilling by including padding in width */
+        /* SDE Reset: Box-sizing is applied globally to prevent spilling */
         * { box-sizing: border-box; }
 
-        :root { --sw-blue: #304cb2; --sw-yellow: #ffbf27; --pc-blue: #004a99; --success: #2e7d32; }
+        :root { 
+            --sw-blue: #304cb2; 
+            --sw-yellow: #ffbf27; 
+            --pc-blue: #004a99; 
+            --success: #2e7d32; 
+            --bg: #f4f7f6;
+        }
         
         body { 
-            font-family: -apple-system, system-ui, sans-serif; 
-            background: #f4f7f6; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); 
             margin: 0; 
-            padding: 12px; 
+            padding: 20px 16px; /* Increased padding creates a gutter for the card */
             color: #333;
-            overflow-x: hidden; /* Strict horizontal containment */
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container { 
-            max-width: 480px; 
+            max-width: 440px; 
             margin: 0 auto; 
             width: 100%; 
         }
 
         .card { 
             background: white; 
-            border-radius: 12px; 
-            padding: 16px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            margin-bottom: 12px;
+            border-radius: 16px; 
+            padding: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
+            margin-bottom: 15px;
             width: 100%;
         }
 
@@ -39,74 +52,70 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            margin-bottom: 15px; 
+            margin-bottom: 20px; 
         }
         
-        h1 { font-size: 1.1rem; color: var(--sw-blue); margin: 0; }
-        .light-icon { color: var(--sw-yellow); font-size: 24px; }
+        h1 { font-size: 1.2rem; color: var(--sw-blue); margin: 0; font-weight: 800; }
+        .light-icon { color: var(--sw-yellow); font-size: 26px; }
 
-        label { font-size: 0.7rem; font-weight: bold; color: #666; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        label { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; display: block; margin-bottom: 6px; }
 
-        /* Prevents iOS from zooming in on focus while keeping it within bounds */
+        /* The Chrome/iOS Edge-Spill Fix */
         input, select, button { 
             width: 100%; 
-            padding: 12px; 
-            margin-bottom: 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 16px; 
+            max-width: 100%; 
             display: block;
-            background: #fff;
+            padding: 14px; 
+            margin-bottom: 16px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 10px; 
+            font-size: 16px; /* Essential to prevent iOS auto-zoom */
+            background-color: #ffffff;
+            -webkit-appearance: none; /* Strips default iOS bloated styles */
         }
 
-        button { background: var(--sw-blue); color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:active { opacity: 0.8; }
+        /* Custom arrow for select since -webkit-appearance:none removes it */
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+            padding-right: 2.5rem;
+        }
+
+        button { 
+            background: var(--sw-blue); 
+            color: white; 
+            border: none; 
+            font-weight: 700; 
+            cursor: pointer; 
+            margin-bottom: 0;
+            margin-top: 5px;
+        }
+        
+        button:active { transform: scale(0.98); opacity: 0.9; }
 
         .match-card { 
             border: 1px solid #eee; 
-            border-radius: 10px; 
-            padding: 14px; 
+            border-radius: 12px; 
+            padding: 16px; 
             margin-bottom: 12px; 
             background: #fff; 
             width: 100%;
+            overflow: hidden;
         }
 
         .best-value { border: 2px solid var(--success); background: #f0fff4; }
         
-        /* Flex layout for the result header to prevent overlap */
-        .result-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start; 
-            gap: 10px;
-        }
-
-        .badge { 
-            background: var(--success); 
-            color: white; 
-            padding: 2px 8px; 
-            border-radius: 10px; 
-            font-size: 0.65rem; 
-            font-weight: bold;
-            margin-bottom: 4px;
-            display: inline-block;
-        }
-
-        .price-box { text-align: right; min-width: 80px; }
-        .price { color: var(--success); font-weight: bold; font-size: 1.2rem; }
-        .price small { display: block; font-size: 0.6rem; color: #666; font-weight: normal; }
-
-        .date-header { font-size: 0.75rem; font-weight: bold; color: #888; }
-
-        .meta { 
-            font-size: 0.85rem; 
-            line-height: 1.5; 
-            margin-top: 10px; 
-            padding-top: 10px; 
-            border-top: 1px solid #f0f0f0; 
-        }
-
-        #loader { display: none; text-align: center; color: #666; padding: 20px; }
+        .result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .badge { background: var(--success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: bold; margin-bottom: 6px; display: inline-block; }
+        .price-box { text-align: right; min-width: 85px; }
+        .price { color: var(--success); font-weight: 800; font-size: 1.3rem; }
+        .price small { display: block; font-size: 0.6rem; color: #666; font-weight: normal; margin-top: 2px; }
+        .date-header { font-size: 0.75rem; font-weight: 600; color: #999; margin-bottom: 2px; }
+        .meta { font-size: 0.85rem; line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+        
+        #loader { display: none; text-align: center; color: #666; padding: 20px; font-size: 0.9rem; font-style: italic; }
     </style>
 </head>
 <body>
@@ -133,7 +142,7 @@
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
 
-    <div id="loader">Filtering for 9am-10pm window...</div>
+    <div id="loader">Optimizing for 9am-10pm window...</div>
     <div id="results"></div>
 </div>
 
@@ -145,11 +154,12 @@ async function runSmartSearch() {
     const resultsDiv = document.getElementById('results');
     const loader = document.getElementById('loader');
 
-    if (!targetDateStr) return alert("Please select a date.");
+    if (!targetDateStr) return alert("Select a travel date first.");
     
     resultsDiv.innerHTML = "";
     loader.style.display = "block";
 
+    // Date math for 3-day window
     const targetDate = new Date(targetDateStr + "T00:00:00");
     const dates = [
         new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0],
@@ -163,19 +173,19 @@ async function runSmartSearch() {
     for (let dateStr of dates) {
         const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
         
-        // Flight simulation (In a live app, this replaces with your scraper data)
+        // Mocked Flights (Replace with scraper results in production)
         const dailyFlights = [
-            { id: "WN454", dep: "06:30", arr: "12:15", price: 145 },
-            { id: "WN221", dep: "10:45", arr: "16:30", price: 115 },
-            { id: "WN889", dep: "15:00", arr: "20:45", price: 175 },
-            { id: "WN991", dep: "18:30", arr: "00:15", price: 95 }
+            { id: "WN102", dep: "06:30", arr: "12:15", price: 145 },
+            { id: "WN504", dep: "10:45", arr: "16:30", price: 115 },
+            { id: "WN990", dep: "15:00", arr: "20:45", price: 175 },
+            { id: "WN212", dep: "18:30", arr: "00:15", price: 95 }
         ];
 
         const dailyBuses = [
-            { id: "PC-Early", dep: "08:05", arr: "10:50" },
-            { id: "PC-Noon", dep: "13:55", arr: "16:40" },
-            { id: "PC-Late", dep: "18:15", arr: "21:00" },
-            { id: "PC-Night", dep: "22:15", arr: "01:00" }
+            { id: "PC805", dep: "08:05", arr: "10:50" },
+            { id: "PC135", dep: "13:55", arr: "16:40" },
+            { id: "PC181", dep: "18:15", arr: "21:00" },
+            { id: "PC221", dep: "22:15", arr: "01:00" }
         ];
 
         dailyFlights.forEach(f => {
@@ -193,7 +203,7 @@ async function runSmartSearch() {
                     if (wait >= 60 && wait <= 240) isValid = true;
                 }
 
-                // 9am-10pm Arrival filter
+                // Filter for UIUC/LAX Arrival between 09:00 and 22:00
                 const [arrH, arrM] = finalArr.split(':').map(Number);
                 const totalArrMins = arrH * 60 + arrM;
                 if (totalArrMins < 540 || totalArrMins > 1320) isValid = false;
@@ -213,7 +223,7 @@ async function runSmartSearch() {
     loader.style.display = "none";
     
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px;'>No matches found in the 9am-10pm window.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No connections match the 9am-10pm arrival window.</div>";
     } else {
         render(allOptions.slice(0, 5), resultsDiv);
     }
@@ -241,7 +251,7 @@ function render(options, container) {
                     <div style="flex: 1;">
                         ${isBest ? '<div class="badge">TOP PICK</div>' : ''}
                         <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(±1 Day)' : ''}</div>
-                        <div style="font-weight:bold; color:var(--sw-blue);">${opt.f.id} + ${opt.b.id}</div>
+                        <div style="font-weight:700; color:var(--sw-blue);">${opt.f.id} + ${opt.b.id}</div>
                     </div>
                     <div class="price-box">
                         <div class="price">$${opt.totalPrice.toFixed(0)}</div>
@@ -249,10 +259,10 @@ function render(options, container) {
                     </div>
                 </div>
                 <div class="meta">
-                    <b>Leg 1:</b> ${opt.f.dep} ➔ ${opt.f.arr}<br>
-                    <b>Leg 2:</b> ${opt.b.dep} ➔ ${opt.b.arr}<br>
-                    <b>Arrive:</b> ${opt.finalArr}<br>
-                    <b>Wait:</b> ${opt.wait} mins
+                    <b>Departure:</b> ${opt.f.dep}<br>
+                    <b>Arrive @ MDW:</b> ${opt.f.arr}<br>
+                    <b>Wait Time:</b> ${opt.wait} mins<br>
+                    <b>Final Arrival:</b> ${opt.finalArr}
                 </div>
             </div>`;
     });
