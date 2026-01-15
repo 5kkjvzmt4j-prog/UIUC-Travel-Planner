@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SWA-UIUC Pro Planner</title>
+    <title>Encino - UIUC Pro Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
     <style>
-        /* Global Reset to prevent edge-spilling */
+        /* The "SDE Magic" - Prevents spilling by including padding in width */
         * { box-sizing: border-box; }
 
         :root { --sw-blue: #304cb2; --sw-yellow: #ffbf27; --pc-blue: #004a99; --success: #2e7d32; }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-family: -apple-system, system-ui, sans-serif; 
             background: #f4f7f6; 
             margin: 0; 
-            padding: 10px; 
+            padding: 12px; 
             color: #333;
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-x: hidden; /* Strict horizontal containment */
         }
 
-        .container { max-width: 500px; margin: 0 auto; width: 100%; }
+        .container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            width: 100%; 
+        }
 
         .card { 
             background: white; 
@@ -31,42 +35,52 @@
             width: 100%;
         }
 
-        .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .light-icon { color: var(--sw-yellow); font-size: 28px; line-height: 1; }
+        .header-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+        }
         
-        h1 { font-size: 1.1rem; color: var(--sw-blue); margin: 0; padding-right: 10px; }
+        h1 { font-size: 1.1rem; color: var(--sw-blue); margin: 0; }
+        .light-icon { color: var(--sw-yellow); font-size: 24px; }
 
         label { font-size: 0.7rem; font-weight: bold; color: #666; text-transform: uppercase; display: block; margin-bottom: 4px; }
 
-        /* Mobile-optimized inputs */
+        /* Prevents iOS from zooming in on focus while keeping it within bounds */
         input, select, button { 
             width: 100%; 
             padding: 12px; 
             margin-bottom: 12px; 
             border: 1px solid #ddd; 
             border-radius: 8px; 
-            font-size: 16px; /* Prevents iOS zoom on focus */
+            font-size: 16px; 
             display: block;
+            background: #fff;
         }
 
-        button { background: var(--sw-blue); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        button:active { background: #253b8c; }
+        button { background: var(--sw-blue); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; }
 
-        /* Result Cards */
         .match-card { 
             border: 1px solid #eee; 
             border-radius: 10px; 
             padding: 14px; 
             margin-bottom: 12px; 
             background: #fff; 
-            position: relative;
             width: 100%;
         }
 
         .best-value { border: 2px solid var(--success); background: #f0fff4; }
         
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        
+        /* Flex layout for the result header to prevent overlap */
+        .result-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            gap: 10px;
+        }
+
         .badge { 
             background: var(--success); 
             color: white; 
@@ -74,20 +88,25 @@
             border-radius: 10px; 
             font-size: 0.65rem; 
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             display: inline-block;
         }
 
-        .price { text-align: right; color: var(--success); font-weight: bold; font-size: 1.2rem; line-height: 1; }
-        .price small { display: block; font-size: 0.6rem; color: #666; font-weight: normal; margin-top: 2px; }
+        .price-box { text-align: right; min-width: 80px; }
+        .price { color: var(--success); font-weight: bold; font-size: 1.2rem; }
+        .price small { display: block; font-size: 0.6rem; color: #666; font-weight: normal; }
 
-        .date-header { font-size: 0.75rem; font-weight: bold; color: #888; margin-bottom: 5px; }
+        .date-header { font-size: 0.75rem; font-weight: bold; color: #888; }
 
-        .meta { font-size: 0.85rem; line-height: 1.5; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 8px; }
-        .meta b { color: #555; }
+        .meta { 
+            font-size: 0.85rem; 
+            line-height: 1.5; 
+            margin-top: 10px; 
+            padding-top: 10px; 
+            border-top: 1px solid #f0f0f0; 
+        }
 
-        #loader { display: none; text-align: center; color: #666; font-style: italic; margin: 20px; font-size: 0.9rem; }
-        .error-msg { text-align: center; color: #d32f2f; font-size: 0.9rem; padding: 10px; }
+        #loader { display: none; text-align: center; color: #666; padding: 20px; }
     </style>
 </head>
 <body>
@@ -95,7 +114,7 @@
 <div class="container">
     <div class="card">
         <div class="header-row">
-            <h1>Smart Travel Matcher</h1>
+            <h1>Travel Smarter</h1>
             <span class="mdi mdi-ceiling-light-multiple light-icon"></span>
         </div>
         
@@ -114,7 +133,7 @@
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
 
-    <div id="loader">Calculating optimal transfers...</div>
+    <div id="loader">Filtering for 9am-10pm window...</div>
     <div id="results"></div>
 </div>
 
@@ -141,15 +160,15 @@ async function runSmartSearch() {
     let allOptions = [];
     const shuttlePrice = 46.00;
 
-    // Simulate variations in schedules
     for (let dateStr of dates) {
         const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
         
+        // Flight simulation (In a live app, this replaces with your scraper data)
         const dailyFlights = [
-            { id: "WN454", dep: "06:30", arr: "12:15", price: 140 + (Math.random() * 50) },
-            { id: "WN221", dep: "10:45", arr: "16:30", price: 110 + (Math.random() * 50) },
-            { id: "WN889", dep: "15:00", arr: "20:45", price: 170 + (Math.random() * 50) },
-            { id: "WN991", dep: "18:30", arr: "00:15", price: 90 + (Math.random() * 50) }
+            { id: "WN454", dep: "06:30", arr: "12:15", price: 145 },
+            { id: "WN221", dep: "10:45", arr: "16:30", price: 115 },
+            { id: "WN889", dep: "15:00", arr: "20:45", price: 175 },
+            { id: "WN991", dep: "18:30", arr: "00:15", price: 95 }
         ];
 
         const dailyBuses = [
@@ -174,7 +193,7 @@ async function runSmartSearch() {
                     if (wait >= 60 && wait <= 240) isValid = true;
                 }
 
-                // 9am-10pm Arrival window filter
+                // 9am-10pm Arrival filter
                 const [arrH, arrM] = finalArr.split(':').map(Number);
                 const totalArrMins = arrH * 60 + arrM;
                 if (totalArrMins < 540 || totalArrMins > 1320) isValid = false;
@@ -194,7 +213,7 @@ async function runSmartSearch() {
     loader.style.display = "none";
     
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div class='error-msg'>No matches found for the 9am-10pm window.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px;'>No matches found in the 9am-10pm window.</div>";
     } else {
         render(allOptions.slice(0, 5), resultsDiv);
     }
@@ -218,22 +237,22 @@ function render(options, container) {
         const isBest = i === 0;
         container.innerHTML += `
             <div class="match-card ${isBest ? 'best-value' : ''}">
-                <div class="card-header">
-                    <div>
+                <div class="result-header">
+                    <div style="flex: 1;">
                         ${isBest ? '<div class="badge">TOP PICK</div>' : ''}
-                        <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(Alt Day)' : ''}</div>
+                        <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(±1 Day)' : ''}</div>
                         <div style="font-weight:bold; color:var(--sw-blue);">${opt.f.id} + ${opt.b.id}</div>
                     </div>
-                    <div class="price">
-                        $${opt.totalPrice.toFixed(0)}
+                    <div class="price-box">
+                        <div class="price">$${opt.totalPrice.toFixed(0)}</div>
                         <small>Total Trip</small>
                     </div>
                 </div>
                 <div class="meta">
                     <b>Leg 1:</b> ${opt.f.dep} ➔ ${opt.f.arr}<br>
                     <b>Leg 2:</b> ${opt.b.dep} ➔ ${opt.b.arr}<br>
-                    <b>Arrival:</b> ${opt.finalArr}<br>
-                    <b>Buffer:</b> ${opt.wait} mins
+                    <b>Arrive:</b> ${opt.finalArr}<br>
+                    <b>Wait:</b> ${opt.wait} mins
                 </div>
             </div>`;
     });
