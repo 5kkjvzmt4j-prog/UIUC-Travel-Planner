@@ -3,107 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Travel Smarter">
-    
     <title>Encino - UIUC Pro Planner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
-    
     <style>
         * { box-sizing: border-box; }
-
-        :root { 
-            --sw-blue: #304cb2; 
-            --sw-yellow: #ffbf27; 
-            --pc-blue: #004a99; 
-            --success: #2e7d32; 
-            --bg: #f4f7f6;
-        }
+        :root { --sw-blue: #304cb2; --sw-yellow: #ffbf27; --pc-blue: #004a99; --success: #2e7d32; --bg: #f4f7f6; --error: #d32f2f; }
         
-        body { 
-            font-family: -apple-system, system-ui, sans-serif;
-            background: var(--bg); 
-            margin: 0; 
-            padding: 20px 16px; 
-            color: #333;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px 16px; color: #333; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
         .container { max-width: 440px; margin: 0 auto; width: 100%; }
-
-        .card { 
-            background: white; 
-            border-radius: 16px; 
-            padding: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
-            margin-bottom: 15px;
-            width: 100%;
-        }
-
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 15px; width: 100%; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { font-size: 1.2rem; color: var(--sw-blue); margin: 0; font-weight: 800; }
         .light-icon { color: var(--sw-yellow); font-size: 26px; }
 
         label { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; display: block; margin-bottom: 6px; }
-
-        input, select, button { 
-            width: 100%; 
-            max-width: 100%; 
-            display: block;
-            padding: 14px; 
-            margin-bottom: 16px; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            background-color: #ffffff;
-            -webkit-appearance: none;
-        }
-
-        select {
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-            padding-right: 2.5rem;
-        }
-
+        input, select, button { width: 100%; max-width: 100%; display: block; padding: 14px; margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 16px; background-color: #ffffff; -webkit-appearance: none; }
+        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; padding-right: 2.5rem; }
         button { background: var(--sw-blue); color: white; border: none; font-weight: 700; cursor: pointer; margin-top: 5px;}
-        button:active { transform: scale(0.98); opacity: 0.9; }
-
-        .match-card { 
-            border: 1px solid #eee; 
-            border-radius: 12px; 
-            padding: 16px; 
-            margin-bottom: 12px; 
-            background: #fff; 
-            width: 100%;
-            overflow: hidden;
-        }
-
+        
+        .match-card { border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 12px; background: #fff; width: 100%; overflow: hidden; position: relative; }
         .best-value { border: 2px solid var(--success); background: #f0fff4; }
         
         .result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-        .badge { background: var(--success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: bold; margin-bottom: 6px; display: inline-block; }
+        .stop-badge { font-size: 0.6rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; display: inline-block; }
+        .stop-0 { background: #e8f5e9; color: var(--success); }
+        .stop-1 { background: #fff3e0; color: #ef6c00; }
         
         .price-box { text-align: right; min-width: 95px; }
         .price { color: var(--success); font-weight: 800; font-size: 1.3rem; }
         .price-breakdown { font-size: 0.65rem; color: #777; margin-top: 4px; line-height: 1.2; }
-
-        .date-header { font-size: 0.75rem; font-weight: 600; color: #999; margin-bottom: 2px; }
-        
-        .meta { 
-            font-size: 0.85rem; 
-            line-height: 1.6; 
-            margin-top: 12px; 
-            padding-top: 12px; 
-            border-top: 1px solid #f0f0f0; 
-        }
-        .meta b { color: var(--sw-blue); }
-        .wait-tag { color: #d32f2f; font-weight: bold; }
-
+        .date-header { font-size: 0.75rem; font-weight: 600; color: #999; }
+        .meta { font-size: 0.85rem; line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+        .wait-tag { color: var(--error); font-weight: bold; }
         #loader { display: none; text-align: center; color: #666; padding: 20px; font-size: 0.9rem; }
     </style>
 </head>
@@ -115,23 +48,18 @@
             <h1>Travel Smarter</h1>
             <span class="mdi mdi-ceiling-light-multiple light-icon"></span>
         </div>
-        
         <label>Target Date</label>
         <input type="date" id="targetDate">
-
         <label>Intended Departure</label>
         <input type="time" id="prefTime" value="09:00">
-
         <label>Route</label>
         <select id="direction">
             <option value="LAX_UIUC">LAX ✈ MDW ➔ UIUC (Bus)</option>
             <option value="UIUC_LAX">UIUC (Bus) ➔ MDW ✈ LAX</option>
         </select>
-
         <button onclick="runSmartSearch()">Find Best Connections</button>
     </div>
-
-    <div id="loader">Finding all available connections...</div>
+    <div id="loader">Checking non-stop & 1-stop routes...</div>
     <div id="results"></div>
 </div>
 
@@ -144,76 +72,60 @@ async function runSmartSearch() {
     const loader = document.getElementById('loader');
 
     if (!targetDateStr) return alert("Select a travel date first.");
-    
     resultsDiv.innerHTML = "";
     loader.style.display = "block";
 
     const targetDate = new Date(targetDateStr + "T00:00:00");
-    const dates = [
-        new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0],
-        targetDateStr,
-        new Date(targetDate.getTime() + 86400000).toISOString().split('T')[0]
-    ];
+    const dates = [targetDateStr]; // Simplified to current day for clarity
 
     let allOptions = [];
     const shuttlePrice = 46.00;
 
-    for (let dateStr of dates) {
-        const dayOffset = (dateStr === targetDateStr) ? 0 : 1;
-        
-        const dailyFlights = [
-            { id: "WN102", dep: "06:30", arr: "12:15", price: 145 },
-            { id: "WN504", dep: "10:45", arr: "16:30", price: 115 },
-            { id: "WN990", dep: "15:00", arr: "20:45", price: 175 },
-            { id: "WN212", dep: "18:30", arr: "00:15", price: 95 }
-        ];
+    // Mix of Nonstop and 1-Stop flight simulations
+    const dailyFlights = [
+        { id: "WN4545", dep: "06:35", arr: "12:30", price: 151, stops: 0 },
+        { id: "WN2268", dep: "10:40", arr: "16:35", price: 112, stops: 0 },
+        { id: "WN974",  dep: "15:15", arr: "21:10", price: 178, stops: 0 },
+        { id: "WN3173", dep: "23:00", arr: "05:00", price: 98,  stops: 0 },
+        { id: "WN1042", dep: "08:15", arr: "15:45", price: 135, stops: 1 }, // 1-stop via DEN
+        { id: "WN5055", dep: "12:20", arr: "19:50", price: 140, stops: 1 }  // 1-stop via PHX
+    ];
 
-        const dailyBuses = [
-            { id: "PC805", dep: "08:05", arr: "10:50" },
-            { id: "PC135", dep: "13:55", arr: "16:40" },
-            { id: "PC181", dep: "18:15", arr: "21:00" },
-            { id: "PC221", dep: "22:15", arr: "01:00" }
-        ];
+    const dailyBuses = [
+        { id: "PC805", dep: "08:05", arr: "10:50" },
+        { id: "PC135", dep: "13:55", arr: "16:40" },
+        { id: "PC181", dep: "18:15", arr: "21:00" },
+        { id: "PC221", dep: "22:15", arr: "01:00" }
+    ];
 
-        dailyFlights.forEach(f => {
-            dailyBuses.forEach(b => {
-                let wait, finalArr, isValid = false;
+    dailyFlights.forEach(f => {
+        dailyBuses.forEach(b => {
+            let wait, finalArr, isValid = false;
+            if (direction === "LAX_UIUC") {
+                wait = timeDiff(f.arr, b.dep);
+                finalArr = b.arr;
+                if (wait >= 45 && wait <= 360) isValid = true;
+            } else {
+                const boarding = timeSub(f.dep, 30);
+                wait = timeDiff(b.arr, boarding);
+                finalArr = f.arr;
+                if (wait >= 60 && wait <= 360) isValid = true;
+            }
 
-                if (direction === "LAX_UIUC") {
-                    wait = timeDiff(f.arr, b.dep);
-                    finalArr = b.arr;
-                    // Safety buffer: at least 45 mins, max 6 hours
-                    if (wait >= 45 && wait <= 360) isValid = true;
-                } else {
-                    const boarding = timeSub(f.dep, 30);
-                    wait = timeDiff(b.arr, boarding);
-                    finalArr = f.arr;
-                    // Safety buffer: at least 60 mins for security
-                    if (wait >= 60 && wait <= 360) isValid = true;
-                }
-
-                if (isValid) {
-                    const firstDep = direction === "LAX_UIUC" ? f.dep : b.dep;
-                    const proxPenalty = Math.abs(timeDiff(prefTime, firstDep)) * 0.1;
-                    const score = f.price + (wait * 0.2) + (dayOffset * 50) + proxPenalty;
-                    
-                    allOptions.push({ 
-                        f, b, wait, dateStr, score, dayOffset, 
-                        flightPrice: f.price, 
-                        shuttlePrice: shuttlePrice,
-                        totalPrice: f.price + shuttlePrice, 
-                        finalArr 
-                    });
-                }
-            });
+            if (isValid) {
+                const firstDep = direction === "LAX_UIUC" ? f.dep : b.dep;
+                const proxPenalty = Math.abs(timeDiff(prefTime, firstDep)) * 0.1;
+                // Penalize stops slightly in the score so nonstops rank higher if price is close
+                const score = f.price + (wait * 0.2) + (f.stops * 20) + proxPenalty;
+                allOptions.push({ f, b, wait, dateStr: targetDateStr, score, flightPrice: f.price, totalPrice: f.price + shuttlePrice, finalArr });
+            }
         });
-    }
+    });
 
     allOptions.sort((a, b) => a.score - b.score);
     loader.style.display = "none";
-    
     if (allOptions.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No feasible connections found for these dates.</div>";
+        resultsDiv.innerHTML = "<div style='text-align:center; padding:20px; color:#888;'>No feasible connections found.</div>";
     } else {
         render(allOptions.slice(0, 10), resultsDiv, direction);
     }
@@ -235,30 +147,26 @@ function timeSub(time, mins) {
 function render(options, container, direction) {
     options.forEach((opt, i) => {
         const isBest = i === 0;
-        const leg1Label = direction === "LAX_UIUC" ? "Flight" : "Shuttle";
-        const leg2Label = direction === "LAX_UIUC" ? "Shuttle" : "Flight";
+        const stopText = opt.f.stops === 0 ? "NONSTOP" : "1 STOP";
+        const stopClass = `stop-${opt.f.stops}`;
         
         container.innerHTML += `
             <div class="match-card ${isBest ? 'best-value' : ''}">
                 <div class="result-header">
                     <div style="flex: 1;">
-                        ${isBest ? '<div class="badge">TOP PICK</div>' : ''}
-                        <div class="date-header">${opt.dateStr} ${opt.dayOffset !== 0 ? '(±1 Day)' : ''}</div>
+                        <div class="stop-badge ${stopClass}">${stopText}</div><br>
+                        <div class="date-header">${opt.dateStr}</div>
                         <div style="font-weight:700; color:var(--sw-blue);">${opt.f.id} + ${opt.b.id}</div>
                     </div>
                     <div class="price-box">
                         <div class="price">$${opt.totalPrice.toFixed(0)}</div>
-                        <div class="price-breakdown">
-                            Flight: $${opt.flightPrice.toFixed(0)}<br>
-                            Shuttle: $${opt.shuttlePrice.toFixed(0)}
-                        </div>
+                        <div class="price-breakdown">Flight: $${opt.flightPrice.toFixed(0)}<br>Shuttle: $46</div>
                     </div>
                 </div>
                 <div class="meta">
-                    <b>Leg 1 (${leg1Label}):</b> ${direction === "LAX_UIUC" ? opt.f.dep + ' ➔ ' + opt.f.arr : opt.b.dep + ' ➔ ' + opt.b.arr}<br>
-                    <b>Leg 2 (${leg2Label}):</b> ${direction === "LAX_UIUC" ? opt.b.dep + ' ➔ ' + opt.b.arr : opt.f.dep + ' ➔ ' + opt.f.arr}<br>
-                    <b>MDW Wait:</b> <span class="wait-tag">${opt.wait} mins</span><br>
-                    <b>Final Arrival:</b> <strong>${opt.finalArr}</strong>
+                    <b>Leg 1:</b> ${direction === "LAX_UIUC" ? opt.f.dep + ' ➔ ' + opt.f.arr : opt.b.dep + ' ➔ ' + opt.b.arr}<br>
+                    <b>Leg 2:</b> ${direction === "LAX_UIUC" ? opt.b.dep + ' ➔ ' + opt.b.arr : opt.f.dep + ' ➔ ' + opt.f.arr}<br>
+                    <b>Wait:</b> <span class="wait-tag">${opt.wait} mins</span> | <b>Final Arr:</b> ${opt.finalArr}
                 </div>
             </div>`;
     });
